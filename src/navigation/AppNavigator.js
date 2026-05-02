@@ -21,19 +21,28 @@ import ProfileScreen from '../screens/agent/ProfileScreen';
 import TasksScreen from '../screens/agent/TasksScreen';
 import NetworkScreen from '../screens/agent/NetworkScreen';
 
+import AgentListScreen from '../screens/admin/AgentListScreen';
+import TieUpRequestsScreen from '../screens/admin/TieUpRequestsScreen';
+import ReportsScreen from '../screens/admin/ReportsScreen';
+import SettingsScreen from '../screens/admin/SettingsScreen';
+import AddAgentScreen from '../screens/admin/AddAgentScreen';
+import JoiningFeesScreen from '../screens/admin/JoiningFeesScreen';
+import PincodeMasterScreen from '../screens/admin/PincodeMasterScreen';
+
+
 const BrandedHeader = () => (
     <Surface style={{ 
-        height: 100, 
-        backgroundColor: '#050A18', // Dark background from logo
+        height: 70, 
+        backgroundColor: '#050A18',
         flexDirection: 'row', 
         alignItems: 'center', 
         justifyContent: 'space-between', 
         paddingHorizontal: 15,
-        paddingTop: 35, // Added padding for status bar/notch
+        paddingTop: 15,
     }} elevation={4}>
         <Image 
             source={require('../assets/logo.jpeg')} 
-            style={{ width: 80, height: 30 }} 
+            style={{ width: 50, height: 22 }} 
             resizeMode="contain"
         />
         
@@ -81,6 +90,35 @@ const AgentTabs = () => {
     );
 };
 
+const AdminTabs = () => {
+    return (
+        <Tab.Navigator
+            screenOptions={({ route }) => ({
+                tabBarIcon: ({ focused, color, size }) => {
+                    let iconName;
+                    if (route.name === 'Overview') iconName = focused ? 'view-dashboard' : 'view-dashboard-outline';
+                    else if (route.name === 'Agents') iconName = focused ? 'account-group' : 'account-group-outline';
+                    else if (route.name === 'Tie-ups') iconName = focused ? 'store' : 'store-outline';
+                    else if (route.name === 'Reports') iconName = focused ? 'chart-bar' : 'chart-bar';
+                    else if (route.name === 'Settings') iconName = focused ? 'cog' : 'cog-outline';
+                    return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
+                },
+                tabBarActiveTintColor: '#0A66C2',
+                tabBarInactiveTintColor: 'gray',
+                header: () => <BrandedHeader />,
+                tabBarStyle: { backgroundColor: '#FFFFFF', borderTopWidth: 0, elevation: 10, shadowOpacity: 0.1 }
+            })}
+        >
+            <Tab.Screen name="Overview" component={AdminDashboard} />
+            <Tab.Screen name="Agents" component={AgentListScreen} />
+            <Tab.Screen name="Tie-ups" component={TieUpRequestsScreen} />
+            <Tab.Screen name="Reports" component={ReportsScreen} />
+            <Tab.Screen name="Settings" component={SettingsScreen} />
+        </Tab.Navigator>
+    );
+};
+
+
 const AppNavigator = () => {
     const { user, loading } = useAuth();
 
@@ -96,7 +134,12 @@ const AppNavigator = () => {
                 {!user ? (
                     <Stack.Screen name="Login" component={LoginScreen} />
                 ) : user.role === 'admin' ? (
-                    <Stack.Screen name="AdminDashboard" component={AdminDashboard} options={{ title: 'Admin Panel' }} />
+                    <>
+                        <Stack.Screen name="AdminHome" component={AdminTabs} options={{ headerShown: false }} />
+                        <Stack.Screen name="AddAgent" component={AddAgentScreen} options={{ title: 'Add New Agent' }} />
+                        <Stack.Screen name="JoiningFees" component={JoiningFeesScreen} options={{ title: 'Joining Fees' }} />
+                        <Stack.Screen name="PincodeMaster" component={PincodeMasterScreen} options={{ title: 'Pincode Master' }} />
+                    </>
                 ) : (
                     <>
                         <Stack.Screen name="AgentHome" component={AgentTabs} options={{ headerShown: false }} />

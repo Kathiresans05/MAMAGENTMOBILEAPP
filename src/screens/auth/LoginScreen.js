@@ -10,7 +10,7 @@ const LoginScreen = () => {
 
     const handleLogin = async () => {
         try {
-            await login(email, password);
+            await login(email.trim(), password);
         } catch (e) {
             const msg = e.response?.data?.msg || 'Network Error - Check your connection';
             Alert.alert('Error', msg);

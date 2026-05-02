@@ -27,6 +27,19 @@ router.get('/agents', [auth, adminAuth], async (req, res) => {
     }
 });
 
+// @route    GET api/admin/tie-ups
+// @desc     Get all tie-ups
+// @access   Private (Admin only)
+router.get('/tie-ups', [auth, adminAuth], async (req, res) => {
+    try {
+        const tieUps = await TieUp.find().populate('agentId', 'name email');
+        res.json(tieUps);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
 // @route    POST api/admin/assign-task
 // @desc     Assign task to agent
 // @access   Private (Admin only)
@@ -86,6 +99,56 @@ router.put('/activate-agent/:id', [auth, adminAuth], async (req, res) => {
         }
 
         res.json(user);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+// @route    GET api/admin/check-agent
+// @desc     Check if a pincode already has an active agent
+// @access   Private (Admin only)
+router.get('/check-agent', [auth, adminAuth], async (req, res) => {
+    const { pincode } = req.query;
+    if (!pincode) return res.status(400).json({ msg: 'Pincode is required' });
+
+    try {
+        const pinRecord = await Pincode.findOne({ code: pincode });
+        if (!pinRecord) {
+            return res.json({ assigned: false, exists: false });
+        }
+        return res.json({ 
+            assigned: !!pinRecord.activeAgentId, 
+            exists: true,
+            details: pinRecord
+        });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+// @route    POST api/admin/save-pincode
+// @desc     Save newly fetched pincode data to DB
+// @access   Private (Admin only)
+router.post('/save-pincode', [auth, adminAuth], async (req, res) => {
+    const { pincode, postOffice, district, state, division, region, deliveryStatus } = req.body;
+    try {
+        let pinRecord = await Pincode.findOne({ code: pincode });
+        if (!pinRecord) {
+            pinRecord = new Pincode({
+                code: pincode,
+                name: postOffice,
+                postOffice,
+                district,
+                state,
+                division,
+                region,
+                deliveryStatus
+            });
+            await pinRecord.save();
+        }
+        res.json(pinRecord);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server error');

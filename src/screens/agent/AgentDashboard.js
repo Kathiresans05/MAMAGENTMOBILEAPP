@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, RefreshControl } from 'react-native';
-import { Surface, Title, Text, Button, IconButton, useTheme } from 'react-native-paper';
+import { View, ScrollView, StyleSheet, RefreshControl, Alert } from 'react-native';
+import { Surface, Title, Text, Button, IconButton, useTheme, Menu } from 'react-native-paper';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
 import DashboardCard from '../../components/DashboardCard';
@@ -16,6 +16,7 @@ const AgentDashboard = ({ navigation }) => {
         downline: 0 
     });
     const [refreshing, setRefreshing] = useState(false);
+    const [menuVisible, setMenuVisible] = useState(false);
 
     const fetchStats = async () => {
         try {
@@ -50,7 +51,21 @@ const AgentDashboard = ({ navigation }) => {
             <Surface style={styles.walletCard} elevation={4}>
                 <View style={styles.walletHeader}>
                     <Text style={styles.walletLabel}>Wallet Balance</Text>
-                    <IconButton icon="dots-vertical" iconColor="white" />
+                    <Menu
+                        visible={menuVisible}
+                        onDismiss={() => setMenuVisible(false)}
+                        anchor={
+                            <IconButton 
+                                icon="dots-vertical" 
+                                iconColor="white" 
+                                onPress={() => setMenuVisible(true)} 
+                            />
+                        }
+                    >
+                        <Menu.Item onPress={() => { setMenuVisible(false); Alert.alert('Add Money', 'Add money feature coming soon!'); }} title="Add Money" leadingIcon="plus-circle" />
+                        <Menu.Item onPress={() => { setMenuVisible(false); Alert.alert('Transfer', 'Transfer feature coming soon!'); }} title="Transfer" leadingIcon="bank-transfer" />
+                        <Menu.Item onPress={() => { setMenuVisible(false); Alert.alert('Statement', 'Your wallet statement will appear here.'); }} title="Statement" leadingIcon="file-document" />
+                    </Menu>
                 </View>
                 <Text style={styles.balance}>₹{stats.balance.toLocaleString('en-IN')}</Text>
                 <View style={styles.walletActions}>
@@ -58,7 +73,7 @@ const AgentDashboard = ({ navigation }) => {
                         mode="contained" 
                         buttonColor="rgba(255,255,255,0.2)" 
                         style={styles.walletBtn}
-                        onPress={() => {}}
+                        onPress={() => Alert.alert('Withdraw', 'Minimum withdrawal is ₹100. Feature will be available once you have balance.')}
                     >
                         Withdraw
                     </Button>
@@ -66,7 +81,7 @@ const AgentDashboard = ({ navigation }) => {
                         mode="contained" 
                         buttonColor="rgba(255,255,255,0.2)" 
                         style={styles.walletBtn}
-                        onPress={() => {}}
+                        onPress={() => Alert.alert('Transaction History', 'No transactions yet. Your earnings and withdrawals will appear here.')}
                     >
                         History
                     </Button>
