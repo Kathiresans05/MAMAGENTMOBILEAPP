@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert, Image, TouchableOpacity, Keyboard } from 'react-native';
-import { TextInput, Button, Title, Text, ProgressBar, Divider, Card, ActivityIndicator } from 'react-native-paper';
+import { TextInput, Button, Title, Text, ProgressBar, Divider, Card, ActivityIndicator, Chip } from 'react-native-paper';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import apiClient from '../../api/client';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
