@@ -39,6 +39,17 @@ const AgentListScreen = ({ navigation }) => {
         }
     };
 
+    const handleApproveAgent = async (id, status) => {
+        try {
+            await apiClient.put(`/admin/approve-agent/${id}`, { status });
+            setAgents(agents.map(a => a._id === id ? { ...a, status, isActive: status === 'approved' } : a));
+            Alert.alert('Success', `Agent ${status === 'approved' ? 'Approved' : 'Rejected'}`);
+        } catch (e) {
+            console.log(e);
+            Alert.alert('Error', 'Update failed');
+        }
+    };
+
     const filteredAgents = agents.filter(a => 
         (a.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
         (a.email || '').toLowerCase().includes(searchQuery.toLowerCase())
@@ -81,28 +92,43 @@ const AgentListScreen = ({ navigation }) => {
                                 subtitleNumberOfLines={2}
                                 left={(props) => <Avatar.Text {...props} label={agent.name ? agent.name[0].toUpperCase() : '?'} style={{ backgroundColor: '#0A66C2' }} />}
                                 right={(props) => (
-                                    <View style={{ paddingRight: 10, alignItems: 'flex-end', gap: 5 }}>
+                                    <View style={{ paddingRight: 10, justifyContent: 'center' }}>
                                         <Chip 
-                                            textStyle={{ color: agent.isActive ? '#2E7D32' : '#C62828', fontSize: 10 }}
-                                            style={{ backgroundColor: agent.isActive ? '#E8F5E9' : '#FFEBEE', height: 24 }}
+                                            textStyle={{ 
+                                                color: agent.status === 'approved' ? '#1B5E20' : agent.status === 'pending' ? '#F57C00' : '#B71C1C', 
+                                                fontSize: 10, 
+                                                fontWeight: 'bold' 
+                                            }}
+                                            style={{ 
+                                                backgroundColor: agent.status === 'approved' ? '#E8F5E9' : agent.status === 'pending' ? '#FFF3E0' : '#FFEBEE', 
+                                                height: 28, 
+                                                justifyContent: 'center' 
+                                            }}
                                         >
-                                            {agent.isActive ? 'ACTIVE' : 'INACTIVE'}
+                                            {(agent.status || 'pending').toUpperCase()}
                                         </Chip>
                                     </View>
                                 )}
                             />
                             <Card.Content>
                                 <Text style={{ color: '#555', marginBottom: 10 }}>Email: {agent.email || 'N/A'}</Text>
-                                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10 }}>
-                                    <Button mode="outlined" textColor="#0A66C2" style={{ borderColor: '#0A66C2' }}>Edit</Button>
-                                    <Button 
-                                        mode="contained" 
-                                        buttonColor={agent.isActive ? '#F44336' : '#4CAF50'}
-                                        onPress={() => handleToggleStatus(agent._id, agent.isActive)}
-                                    >
-                                        {agent.isActive ? 'Deactivate' : 'Activate'}
-                                    </Button>
-                                </View>
+                                {agent.status === 'pending' ? (
+                                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10 }}>
+                                        <Button mode="outlined" textColor="#D32F2F" style={{ borderColor: '#D32F2F' }} onPress={() => handleApproveAgent(agent._id, 'rejected')}>Reject</Button>
+                                        <Button mode="contained" buttonColor="#4CAF50" onPress={() => handleApproveAgent(agent._id, 'approved')}>Approve Agent</Button>
+                                    </View>
+                                ) : (
+                                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10 }}>
+                                        <Button mode="outlined" textColor="#0A66C2" style={{ borderColor: '#0A66C2' }}>Edit</Button>
+                                        <Button 
+                                            mode="contained" 
+                                            buttonColor={agent.isActive ? '#F44336' : '#4CAF50'}
+                                            onPress={() => handleToggleStatus(agent._id, agent.isActive)}
+                                        >
+                                            {agent.isActive ? 'Deactivate' : 'Activate'}
+                                        </Button>
+                                    </View>
+                                )}
                             </Card.Content>
                         </Card>
                     ))

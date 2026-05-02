@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import LoginScreen from '../screens/auth/LoginScreen';
+import RegisterScreen from '../screens/auth/RegisterScreen';
 import AdminDashboard from '../screens/admin/AdminDashboard';
 import AgentDashboard from '../screens/agent/AgentDashboard';
 import PincodeSelection from '../screens/agent/PincodeSelection';
@@ -132,7 +133,10 @@ const AppNavigator = () => {
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: true }}>
                 {!user ? (
-                    <Stack.Screen name="Login" component={LoginScreen} />
+                    <>
+                        <Stack.Screen name="Login" component={LoginScreen} />
+                        <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Agent Registration' }} />
+                    </>
                 ) : user.role === 'admin' ? (
                     <>
                         <Stack.Screen name="AdminHome" component={AdminTabs} options={{ headerShown: false }} />

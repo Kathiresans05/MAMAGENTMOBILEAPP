@@ -12,15 +12,25 @@ const AdminDashboard = ({ navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
 
     const fetchData = async () => {
+        setLoading(true);
         try {
-            const [agentRes, tieUpRes] = await Promise.all([
-                apiClient.get('/admin/agents'),
-                apiClient.get('/admin/tie-ups')
-            ]);
-            setAgents(Array.isArray(agentRes.data) ? agentRes.data : []);
-            setTieUps(Array.isArray(tieUpRes.data) ? tieUpRes.data : []);
+            // Fetch Agents
+            try {
+                const agentRes = await apiClient.get('/admin/agents');
+                setAgents(Array.isArray(agentRes.data) ? agentRes.data : []);
+            } catch (err) {
+                console.log("Error fetching agents:", err);
+            }
+
+            // Fetch Tie-ups
+            try {
+                const tieUpRes = await apiClient.get('/admin/tie-ups');
+                setTieUps(Array.isArray(tieUpRes.data) ? tieUpRes.data : []);
+            } catch (err) {
+                console.log("Error fetching tie-ups:", err);
+            }
         } catch (e) {
-            console.log("Error fetching admin data:", e);
+            console.log("General fetch error:", e);
         } finally {
             setLoading(false);
             setRefreshing(false);

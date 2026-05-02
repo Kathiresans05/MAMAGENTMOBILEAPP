@@ -13,7 +13,16 @@ router.post('/register', async (req, res) => {
         let user = await User.findOne({ email });
         if (user) return res.status(400).json({ msg: 'User already exists' });
 
-        user = new User({ name, email, password, role, level });
+        user = new User({ 
+            name, 
+            email, 
+            phone: req.body.phone,
+            password, 
+            role: role || 'agent', 
+            level: level || 'pincode',
+            kyc: req.body.kyc,
+            assignedPincode: req.body.assignedPincode
+        });
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(password, salt);
         await user.save();
@@ -21,7 +30,7 @@ router.post('/register', async (req, res) => {
         const payload = { user: { id: user.id, role: user.role } };
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: 360000 }, (err, token) => {
             if (err) throw err;
-            res.json({ token, user: { id: user.id, name: user.name, role: user.role, level: user.level } });
+            res.json({ token, user: { id: user.id, name: user.name, role: user.role, status: user.status } });
         });
     } catch (err) {
         console.error(err.message);
@@ -41,10 +50,20 @@ router.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ msg: 'Invalid Credentials' });
 
+        // Check status for agents
+        if (user.role === 'agent') {
+            if (user.status === 'pending') {
+                return res.status(403).json({ msg: 'Your account is under verification', status: 'pending' });
+            }
+            if (user.status === 'rejected') {
+                return res.status(403).json({ msg: 'Your registration was rejected', status: 'rejected' });
+            }
+        }
+
         const payload = { user: { id: user.id, role: user.role } };
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: 360000 }, (err, token) => {
             if (err) throw err;
-            res.json({ token, user: { id: user.id, name: user.name, role: user.role, level: user.level, isActive: user.isActive } });
+            res.json({ token, user: { id: user.id, name: user.name, role: user.role, status: user.status, isActive: user.isActive } });
         });
     } catch (err) {
         console.error(err.message);

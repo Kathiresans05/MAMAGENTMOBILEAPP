@@ -131,6 +131,34 @@ router.get('/check-agent', [auth, adminAuth], async (req, res) => {
 // @route    POST api/admin/save-pincode
 // @desc     Save newly fetched pincode data to DB
 // @access   Private (Admin only)
+// @route    PUT api/admin/approve-agent/:id
+// @desc     Approve or Reject agent KYC
+// @access   Private (Admin only)
+router.put('/approve-agent/:id', [auth, adminAuth], async (req, res) => {
+    const { status } = req.body; // 'approved' or 'rejected'
+    try {
+        let user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+
+        user.status = status;
+        if (status === 'approved') {
+            user.isActive = true;
+            // If approved, update pincode record
+            if (user.assignedPincode) {
+                await Pincode.findByIdAndUpdate(user.assignedPincode, { activeAgentId: user.id });
+            }
+        } else {
+            user.isActive = false;
+        }
+        
+        await user.save();
+        res.json(user);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
 router.post('/save-pincode', [auth, adminAuth], async (req, res) => {
     const { pincode, postOffice, district, state, division, region, deliveryStatus } = req.body;
     try {
