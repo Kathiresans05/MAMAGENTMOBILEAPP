@@ -146,8 +146,9 @@ const RegisterScreen = ({ navigation }) => {
                 { text: 'OK', onPress: () => navigation.navigate('Login') }
             ]);
         } catch (e) {
-            console.log(e);
-            Alert.alert('Error', e.response?.data?.msg || 'Registration failed');
+            console.log("Registration Error Details:", e.response?.data);
+            const errorMsg = e.response?.data?.message || e.response?.data?.msg || 'Registration failed. Please try again.';
+            Alert.alert('Error', errorMsg);
         } finally {
             setLoading(false);
         }
