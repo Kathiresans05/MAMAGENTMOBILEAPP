@@ -117,7 +117,9 @@ const RegisterScreen = ({ navigation }) => {
         const options = {
             mediaType: 'photo',
             includeBase64: true,
-            quality: 0.5,
+            quality: 0.3,
+            maxWidth: 800,
+            maxHeight: 800,
         };
 
         const callback = (response) => {
@@ -147,7 +149,12 @@ const RegisterScreen = ({ navigation }) => {
             ]);
         } catch (e) {
             console.log("Registration Error Details:", e.response?.data);
-            const errorMsg = e.response?.data?.message || e.response?.data?.msg || 'Registration failed. Please try again.';
+            let errorMsg = 'Registration failed. Please try again.';
+            if (e.response?.data) {
+                errorMsg = e.response.data.message || e.response.data.msg || (typeof e.response.data === 'string' ? e.response.data : errorMsg);
+            } else if (e.message) {
+                errorMsg = e.message;
+            }
             Alert.alert('Error', errorMsg);
         } finally {
             setLoading(false);
