@@ -1,11 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Switch, TouchableOpacity } from 'react-native';
 import { Avatar, Title, Text, Card, List, IconButton, Badge, Divider, Surface } from 'react-native-paper';
 import { useAuth } from '../../context/AuthContext';
+import apiClient from '../../api/client';
+import { Alert, Share, Linking } from 'react-native';
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ navigation }) => {
     const { user, logout } = useAuth();
     const [isOnline, setIsOnline] = useState(true);
+
+    const handleSupport = () => {
+        Alert.alert(
+            'Contact Support',
+            'How would you like to reach us?',
+            [
+                { text: 'WhatsApp', onPress: () => Linking.openURL('whatsapp://send?phone=919876543210&text=Hi Support, I need help with Forge India App') },
+                { text: 'Email', onPress: () => Linking.openURL('mailto:support@forgeindia.com?subject=Agent Support Request') },
+                { text: 'Cancel', style: 'cancel' }
+            ]
+        );
+    };
+
+    const [stats, setStats] = useState({ tieUps: 0, tasks: { total: 0 }, earnings: 0 });
+
+    const fetchStats = async () => {
+        try {
+            const res = await apiClient.get('/agent/dashboard-stats');
+            setStats(res.data);
+        } catch (e) {
+            console.error('Failed to fetch profile stats', e);
+        }
+    };
+
+    useEffect(() => {
+        fetchStats();
+    }, []);
 
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -49,15 +78,15 @@ const ProfileScreen = () => {
                 {/* Stats Grid */}
                 <View style={styles.statsGrid}>
                     <View style={styles.statCard}>
-                        <Text style={styles.statValue}>24</Text>
+                        <Text style={styles.statValue}>{stats.tieUps || 0}</Text>
                         <Text style={styles.statLabel}>Tie-ups</Text>
                     </View>
                     <View style={styles.statCard}>
-                        <Text style={styles.statValue}>156</Text>
+                        <Text style={styles.statValue}>{stats.tasks?.total || 0}</Text>
                         <Text style={styles.statLabel}>Tasks</Text>
                     </View>
                     <View style={styles.statCard}>
-                        <Text style={styles.statValue}>₹{user?.balance || '0'}</Text>
+                        <Text style={styles.statValue}>₹{(Array.isArray(stats.earnings) ? stats.earnings.reduce((a, b) => a + b, 0) : (stats.earnings || 0)).toLocaleString('en-IN')}</Text>
                         <Text style={styles.statLabel}>Earnings</Text>
                     </View>
                 </View>
@@ -66,22 +95,22 @@ const ProfileScreen = () => {
             {/* Menu Sections */}
             <View style={styles.menuContainer}>
                 <MenuSection title="Financial & Performance">
-                    <MenuItem icon="wallet" title="Wallet & Earnings" />
-                    <MenuItem icon="chart-areaspline" title="Performance Analytics" />
+                    <MenuItem icon="wallet" title="Wallet & Earnings" onPress={() => navigation.navigate('Wallet')} />
+                    <MenuItem icon="chart-areaspline" title="Performance Analytics" onPress={() => navigation.navigate('Analytics')} />
                 </MenuSection>
 
                 <MenuSection title="Business Operations">
-                    <MenuItem icon="map" title="My Area Details" />
-                    <MenuItem icon="history" title="My Activities" subtitle="Daily updates history" />
-                    <MenuItem icon="store-plus" title="Tie-up Requests" />
-                    <MenuItem icon="clipboard-list" title="Tasks" />
+                    <MenuItem icon="map" title="My Area Details" onPress={() => Alert.alert('Area Details', `Your assigned area is ${user?.assignedArea || 'Pincode 600001'}. Contact admin to change area.`)} />
+                    <MenuItem icon="history" title="My Activities" subtitle="Daily updates history" onPress={() => navigation.navigate('DailyActivity')} />
+                    <MenuItem icon="store-plus" title="Tie-up Requests" onPress={() => navigation.navigate('TieUpRequest')} />
+                    <MenuItem icon="clipboard-list" title="Tasks" onPress={() => navigation.navigate('Tasks')} />
                 </MenuSection>
 
                 <MenuSection title="Account & Support">
-                    <MenuItem icon="bell" title="Notifications" />
-                    <MenuItem icon="file-document" title="Documents & Verification" />
-                    <MenuItem icon="cog" title="Settings" />
-                    <MenuItem icon="help-circle" title="Support / Help" />
+                    <MenuItem icon="bell" title="Notifications" onPress={() => navigation.navigate('Notifications')} />
+                    <MenuItem icon="file-document" title="Documents & Verification" onPress={() => navigation.navigate('KYC')} />
+                    <MenuItem icon="cog" title="Settings" onPress={() => navigation.navigate('Settings')} />
+                    <MenuItem icon="help-circle" title="Support / Help" onPress={handleSupport} />
                 </MenuSection>
 
                 <TouchableOpacity style={styles.logoutButton} onPress={logout}>

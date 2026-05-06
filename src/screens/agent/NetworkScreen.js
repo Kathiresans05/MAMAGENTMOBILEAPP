@@ -1,39 +1,94 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Title, Button, Card, IconButton, ProgressBar, Surface, List, Divider } from 'react-native-paper';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { Text, Title, Button, Card, IconButton, ProgressBar, Surface, List, Divider, ActivityIndicator } from 'react-native-paper';
+import { Alert } from 'react-native';
+import apiClient from '../../api/client';
 
-const NetworkScreen = () => {
+const NetworkScreen = ({ navigation }) => {
+    const [stats, setStats] = useState({ tieUps: 0 });
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const fetchStats = async () => {
+        try {
+            const res = await apiClient.get('/agent/dashboard-stats');
+            setStats(res.data);
+        } catch (e) {
+            console.error('Failed to fetch network stats', e);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchStats();
+    }, []);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchStats();
+    };
+
+    const targetTieUps = 10;
+    const progress = Math.min(stats.tieUps / targetTieUps, 1);
+
+    if (loading && !refreshing) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#0F4C81" />
+            </View>
+        );
+    }
+
     return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+            style={styles.container} 
+            showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        >
             {/* Network Progress Section */}
             <Card style={styles.progressCard} elevation={2}>
                 <Card.Content>
                     <View style={styles.progressHeader}>
                         <Title style={styles.progressTitle}>Network Completion</Title>
-                        <Text style={styles.progressValue}>0%</Text>
+                        <Text style={styles.progressValue}>{Math.round(progress * 100)}%</Text>
                     </View>
-                    <ProgressBar progress={0} color="#0F4C81" style={styles.progressBar} />
-                    <Text style={styles.progressSub}>Add your first tie-up to start your network</Text>
+                    <ProgressBar progress={progress} color="#0F4C81" style={styles.progressBar} />
+                    <Text style={styles.progressSub}>
+                        {stats.tieUps >= targetTieUps 
+                            ? 'Target reached! Your area network is strong.' 
+                            : `${targetTieUps - stats.tieUps} more tie-ups to reach your area target.`}
+                    </Text>
                 </Card.Content>
             </Card>
 
-            {/* Empty State Illustration */}
-            <View style={styles.emptyContainer}>
-                <Surface style={styles.iconCircle} elevation={1}>
-                    <IconButton icon="hub" size={60} iconColor="#0F4C81" />
-                </Surface>
-                <Title style={styles.emptyTitle}>No network connections yet</Title>
-                <Text style={styles.emptySub}>
-                    Start building your area network by adding service tie-ups.
-                </Text>
-            </View>
+            {stats.tieUps === 0 ? (
+                /* Empty State Illustration */
+                <View style={styles.emptyContainer}>
+                    <Surface style={styles.iconCircle} elevation={1}>
+                        <IconButton icon="hub" size={60} iconColor="#0F4C81" />
+                    </Surface>
+                    <Title style={styles.emptyTitle}>No network connections yet</Title>
+                    <Text style={styles.emptySub}>
+                        Start building your area network by adding service tie-ups.
+                    </Text>
+                </View>
+            ) : (
+                <View style={styles.statsContainer}>
+                    <Surface style={styles.mainStatBox} elevation={1}>
+                        <Title style={styles.mainStatValue}>{stats.tieUps}</Title>
+                        <Text style={styles.mainStatLabel}>Connected Businesses</Text>
+                    </Surface>
+                </View>
+            )}
 
             {/* Area Insights Section */}
             <Title style={styles.sectionTitle}>Area Insights (Your Territory)</Title>
             <Card style={styles.insightsCard} elevation={1}>
                 <List.Item
                     title="Hospitals"
-                    description="12 available (0 connected)"
+                    description={`12 available (${stats.tieUps > 2 ? 2 : stats.tieUps} connected)`}
                     left={props => <List.Icon {...props} icon="hospital-building" color="#E91E63" />}
                 />
                 <Divider />
@@ -65,7 +120,7 @@ const NetworkScreen = () => {
                     icon="plus" 
                     style={styles.actionBtn}
                     buttonColor="#0F4C81"
-                    onPress={() => {}}
+                    onPress={() => navigation.navigate('TieUpRequest')}
                 >
                     Add Tie-up
                 </Button>
@@ -75,7 +130,7 @@ const NetworkScreen = () => {
                         icon="magnify" 
                         style={styles.halfBtn}
                         textColor="#0F4C81"
-                        onPress={() => {}}
+                        onPress={() => navigation.navigate('ExploreServices')}
                     >
                         Explore
                     </Button>
@@ -84,7 +139,7 @@ const NetworkScreen = () => {
                         icon="map-marker-radius" 
                         style={styles.halfBtn}
                         textColor="#0F4C81"
-                        onPress={() => {}}
+                        onPress={() => Alert.alert('My Area', 'You are currently assigned to Pincode 560001 (Bangalore Central). You can manage services within this territory.')}
                     >
                         My Area
                     </Button>
@@ -108,6 +163,10 @@ const styles = StyleSheet.create({
     iconCircle: { backgroundColor: 'white', borderRadius: 50, marginBottom: 20 },
     emptyTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
     emptySub: { textAlign: 'center', color: '#666', marginTop: 8, paddingHorizontal: 30, fontSize: 13 },
+    statsContainer: { marginVertical: 20 },
+    mainStatBox: { backgroundColor: 'white', borderRadius: 20, padding: 20, alignItems: 'center' },
+    mainStatValue: { fontSize: 32, fontWeight: 'bold', color: '#0F4C81' },
+    mainStatLabel: { fontSize: 14, color: '#666', marginTop: 5 },
     sectionTitle: { fontSize: 15, fontWeight: 'bold', color: '#333', marginTop: 20, marginBottom: 10 },
     insightsCard: { backgroundColor: 'white', borderRadius: 15, overflow: 'hidden' },
     suggestionCard: { 

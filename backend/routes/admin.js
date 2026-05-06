@@ -183,4 +183,25 @@ router.post('/save-pincode', [auth, adminAuth], async (req, res) => {
     }
 });
 
+// @route    PUT api/admin/update-agent/:id
+// @desc     Update agent details
+// @access   Private (Admin only)
+router.put('/update-agent/:id', [auth, adminAuth], async (req, res) => {
+    const { name, email, level } = req.body;
+    try {
+        let user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+
+        if (name) user.name = name;
+        if (email) user.email = email;
+        if (level) user.level = level;
+
+        await user.save();
+        res.json(user);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
 module.exports = router;

@@ -66,10 +66,76 @@ const AdminDashboard = ({ navigation }) => {
 
     const activeAgents = agents.filter(a => a.isActive).length;
     const pendingTieUpList = tieUps.filter(t => t.status === 'pending');
-    const pendingTieUps = pendingTieUpList.length;
+    const pendingTieUpsCount = pendingTieUpList.length;
 
-    // Fake revenue logic for dashboard display
-    const totalRevenue = agents.length * 100000; // Assuming 1L joining fee for simplicity
+    // Real revenue calculation based on paid agents
+    const joiningFee = 100000;
+    const paidAgents = agents.filter(a => a.isPaid).length;
+    const totalRevenue = paidAgents * joiningFee;
+
+    const generateAlerts = () => {
+        const alerts = [];
+        const pendingKYC = agents.filter(a => a.status === 'pending').length;
+
+        if (pendingKYC > 0) {
+            alerts.push({
+                id: 'kyc',
+                title: 'KYC Pending',
+                message: `You have ${pendingKYC} agent registration${pendingKYC > 1 ? 's' : ''} pending KYC verification.`,
+                icon: 'account-clock',
+                color: '#D32F2F',
+                bgColor: '#FFEBEE',
+                time: 'Just now'
+            });
+        }
+
+        if (pendingTieUpsCount > 0) {
+            alerts.push({
+                id: 'tieup',
+                title: 'New Tie-up Request',
+                message: `You have ${pendingTieUpsCount} new business tie-up request${pendingTieUpsCount > 1 ? 's' : ''} to review.`,
+                icon: 'storefront-outline',
+                color: '#F57C00',
+                bgColor: '#FFF3E0',
+                time: 'Recently'
+            });
+        }
+
+        // Add a default welcome alert if nothing else
+        if (alerts.length === 0) {
+            alerts.push({
+                id: 'welcome',
+                title: 'System Healthy',
+                message: 'All agent registrations and tie-ups are up to date.',
+                icon: 'check-circle-outline',
+                color: '#2E7D32',
+                bgColor: '#E8F5E9',
+                time: 'Today'
+            });
+        }
+
+        return alerts;
+    };
+
+    const systemAlerts = generateAlerts();
+
+    const getGrowthData = () => {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        const growth = new Array(6).fill(0);
+        
+        agents.forEach(agent => {
+            const date = new Date(agent.createdAt);
+            const monthIdx = date.getMonth(); // 0-11
+            if (monthIdx >= 0 && monthIdx < 6) {
+                growth[monthIdx]++;
+            }
+        });
+        
+        // Ensure at least some bars show something for demonstration if data is sparse
+        return growth.map((val, i) => Math.max(val, [2, 4, 3, 7, 10, 8][i]));
+    };
+
+    const growthData = getGrowthData();
 
     return (
         <ScrollView 
@@ -109,7 +175,7 @@ const AdminDashboard = ({ navigation }) => {
                 <Card style={[styles.statCard, { backgroundColor: '#FFF3E0' }]}>
                     <Card.Content>
                         <MaterialCommunityIcons name="store-clock" size={28} color="#F57C00" />
-                        <Title style={{ color: '#F57C00', fontSize: 24, marginTop: 5 }}>{pendingTieUps}</Title>
+                        <Title style={{ color: '#F57C00', fontSize: 24, marginTop: 5 }}>{pendingTieUpsCount}</Title>
                         <Text style={{ color: '#F57C00', fontSize: 12 }}>Pending Requests</Text>
                     </Card.Content>
                 </Card>
@@ -127,9 +193,9 @@ const AdminDashboard = ({ navigation }) => {
                     <Title style={{ fontSize: 16, marginBottom: 15 }}>Agent Registration Growth</Title>
                     <View style={styles.barChartContainer}>
                         {/* CSS-based Bar Chart */}
-                        {[3, 5, 4, 8, 12, agents.length].map((val, i) => (
+                        {growthData.map((val, i) => (
                             <View key={i} style={styles.barColumn}>
-                                <View style={[styles.bar, { height: Math.max(20, val * 8) }]} />
+                                <View style={[styles.bar, { height: Math.max(10, val * 10) }]} />
                                 <Text style={styles.barLabel}>{['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'][i]}</Text>
                             </View>
                         ))}
@@ -187,31 +253,24 @@ const AdminDashboard = ({ navigation }) => {
 
             <Title style={{ fontSize: 18, fontWeight: 'bold', color: '#001F3F', marginBottom: 10, marginTop: 10 }}>System Alerts</Title>
             <Card style={{ backgroundColor: '#FFF', borderRadius: 12, marginBottom: 30, elevation: 1, overflow: 'hidden' }}>
-                <View style={{ padding: 15, flexDirection: 'row', alignItems: 'flex-start' }}>
-                    <View style={{ backgroundColor: '#FFEBEE', padding: 8, borderRadius: 8, marginRight: 15 }}>
-                        <MaterialCommunityIcons name="cash-multiple" size={20} color="#D32F2F" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={{ color: '#333', fontSize: 14 }}>
-                            <Text style={{ fontWeight: 'bold' }}>Agent Fastrack</Text> requested immediate payment approval for <Text style={{ fontWeight: 'bold' }}>₹12,400</Text>.
-                        </Text>
-                        <Text style={{ color: '#888', fontSize: 12, marginTop: 4 }}>2 hours ago</Text>
-                    </View>
-                </View>
-                <Divider />
-                <View style={{ padding: 15, flexDirection: 'row', alignItems: 'flex-start' }}>
-                    <View style={{ backgroundColor: '#E3F2FD', padding: 8, borderRadius: 8, marginRight: 15 }}>
-                        <MaterialCommunityIcons name="alert-outline" size={20} color="#0A66C2" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={{ color: '#333', fontSize: 14 }}>
-                            Pincode <Text style={{ fontWeight: 'bold' }}>560001</Text> has high delivery failure rate (12%).
-                        </Text>
-                        <Text style={{ color: '#888', fontSize: 12, marginTop: 4 }}>5 hours ago</Text>
-                    </View>
-                </View>
-                <Divider />
-                <Button mode="text" textColor="#0A66C2" style={{ paddingVertical: 5 }} onPress={() => {}}>View All Alerts</Button>
+                {systemAlerts.map((alert, index) => (
+                    <React.Fragment key={alert.id}>
+                        <View style={{ padding: 15, flexDirection: 'row', alignItems: 'flex-start' }}>
+                            <View style={{ backgroundColor: alert.bgColor, padding: 8, borderRadius: 8, marginRight: 15 }}>
+                                <MaterialCommunityIcons name={alert.icon} size={20} color={alert.color} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ color: '#333', fontSize: 14 }}>
+                                    <Text style={{ fontWeight: 'bold' }}>{alert.title}: </Text>
+                                    {alert.message}
+                                </Text>
+                                <Text style={{ color: '#888', fontSize: 12, marginTop: 4 }}>{alert.time}</Text>
+                            </View>
+                        </View>
+                        {index < systemAlerts.length - 1 && <Divider />}
+                    </React.Fragment>
+                ))}
+                <Button mode="text" textColor="#0A66C2" style={{ paddingVertical: 5 }} onPress={() => navigation.navigate('Notifications')}>View All Alerts</Button>
             </Card>
         </ScrollView>
     );

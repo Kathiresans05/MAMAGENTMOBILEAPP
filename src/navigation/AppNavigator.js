@@ -12,6 +12,12 @@ import AdminDashboard from '../screens/admin/AdminDashboard';
 import AgentDashboard from '../screens/agent/AgentDashboard';
 import PincodeSelection from '../screens/agent/PincodeSelection';
 import TieUpRequest from '../screens/agent/TieUpRequest';
+import ExploreServicesScreen from '../screens/agent/ExploreServicesScreen';
+import DailyActivityScreen from '../screens/agent/DailyActivityScreen';
+import WalletScreen from '../screens/agent/WalletScreen';
+import AnalyticsScreen from '../screens/agent/AnalyticsScreen';
+import KYCScreen from '../screens/agent/KYCScreen';
+import AgentSettingsScreen from '../screens/agent/SettingsScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -29,42 +35,47 @@ import SettingsScreen from '../screens/admin/SettingsScreen';
 import AddAgentScreen from '../screens/admin/AddAgentScreen';
 import JoiningFeesScreen from '../screens/admin/JoiningFeesScreen';
 import PincodeMasterScreen from '../screens/admin/PincodeMasterScreen';
+import NotificationsScreen from '../screens/admin/NotificationsScreen';
+import { useNavigation } from '@react-navigation/native';
 
 
-const BrandedHeader = () => (
-    <Surface style={{ 
-        height: 70, 
-        backgroundColor: '#050A18',
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        justifyContent: 'space-between', 
-        paddingHorizontal: 15,
-        paddingTop: 15,
-    }} elevation={4}>
-        <Image 
-            source={require('../assets/logo.jpeg')} 
-            style={{ width: 50, height: 22 }} 
-            resizeMode="contain"
-        />
-        
-        <View style={{ alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row' }}>
-                <Text style={{ fontSize: 18, fontWeight: '900', color: '#1E88E5' }}>FORGE </Text>
-                <Text style={{ fontSize: 18, fontWeight: '900', color: '#FFC107' }}>INDIA</Text>
+const BrandedHeader = () => {
+    const navigation = useNavigation();
+    return (
+        <Surface style={{ 
+            height: 70, 
+            backgroundColor: '#050A18',
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            justifyContent: 'space-between', 
+            paddingHorizontal: 15,
+            paddingTop: 15,
+        }} elevation={4}>
+            <Image 
+                source={require('../assets/logo.jpeg')} 
+                style={{ width: 50, height: 22 }} 
+                resizeMode="contain"
+            />
+            
+            <View style={{ alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row' }}>
+                    <Text style={{ fontSize: 18, fontWeight: '900', color: '#1E88E5' }}>FORGE </Text>
+                    <Text style={{ fontSize: 18, fontWeight: '900', color: '#FFC107' }}>INDIA</Text>
+                </View>
+                <Text style={{ fontSize: 9, color: 'white', fontWeight: 'bold', letterSpacing: 4, marginTop: -2 }}>CONNECT</Text>
             </View>
-            <Text style={{ fontSize: 9, color: 'white', fontWeight: 'bold', letterSpacing: 4, marginTop: -2 }}>CONNECT</Text>
-        </View>
 
-        <IconButton 
-            icon="bell-outline" 
-            mode="contained" 
-            containerColor="rgba(255,255,255,0.1)" 
-            iconColor="white" 
-            size={18}
-            onPress={() => {}} 
-        />
-    </Surface>
-);
+            <IconButton 
+                icon="bell-outline" 
+                mode="contained" 
+                containerColor="rgba(255,255,255,0.1)" 
+                iconColor="white" 
+                size={18}
+                onPress={() => navigation.navigate('Notifications')} 
+            />
+        </Surface>
+    );
+};
 
 const AgentTabs = () => {
     return (
@@ -143,12 +154,19 @@ const AppNavigator = () => {
                         <Stack.Screen name="AddAgent" component={AddAgentScreen} options={{ title: 'Add New Agent' }} />
                         <Stack.Screen name="JoiningFees" component={JoiningFeesScreen} options={{ title: 'Joining Fees' }} />
                         <Stack.Screen name="PincodeMaster" component={PincodeMasterScreen} options={{ title: 'Pincode Master' }} />
+                        <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
                     </>
                 ) : (
                     <>
                         <Stack.Screen name="AgentHome" component={AgentTabs} options={{ headerShown: false }} />
                         <Stack.Screen name="PincodeSelection" component={PincodeSelection} options={{ title: 'Select Area' }} />
                         <Stack.Screen name="TieUpRequest" component={TieUpRequest} options={{ title: 'New Tie-up' }} />
+                        <Stack.Screen name="ExploreServices" component={ExploreServicesScreen} options={{ title: 'Explore Services' }} />
+                        <Stack.Screen name="DailyActivity" component={DailyActivityScreen} options={{ title: 'Daily Report' }} />
+                        <Stack.Screen name="Wallet" component={WalletScreen} options={{ title: 'My Wallet' }} />
+                        <Stack.Screen name="Analytics" component={AnalyticsScreen} options={{ title: 'Performance Analytics' }} />
+                        <Stack.Screen name="KYC" component={KYCScreen} options={{ title: 'KYC Verification' }} />
+                        <Stack.Screen name="Settings" component={AgentSettingsScreen} options={{ title: 'Settings' }} />
                     </>
                 )}
             </Stack.Navigator>

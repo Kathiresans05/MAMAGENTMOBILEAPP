@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, RefreshControl, Alert } from 'react-native';
-import { Surface, Title, Text, Button, IconButton, useTheme, Menu } from 'react-native-paper';
+import { View, ScrollView, StyleSheet, RefreshControl, Alert, Share, Linking } from 'react-native';
+import { Surface, Title, Text, Button, IconButton, useTheme, Menu, ActivityIndicator } from 'react-native-paper';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
 import DashboardCard from '../../components/DashboardCard';
@@ -18,12 +18,21 @@ const AgentDashboard = ({ navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [menuVisible, setMenuVisible] = useState(false);
 
+    const [tasks, setTasks] = useState([]);
+    const [tasksLoading, setTasksLoading] = useState(true);
+
     const fetchStats = async () => {
         try {
-            const res = await apiClient.get('/agent/dashboard-stats');
-            setStats(res.data);
+            const [statsRes, tasksRes] = await Promise.all([
+                apiClient.get('/agent/dashboard-stats'),
+                apiClient.get('/agent/tasks').catch(() => ({ data: [] }))
+            ]);
+            setStats(statsRes.data);
+            setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
         } catch (e) {
             console.error('Failed to fetch stats', e);
+        } finally {
+            setTasksLoading(false);
         }
     };
 
@@ -35,6 +44,29 @@ const AgentDashboard = ({ navigation }) => {
         setRefreshing(true);
         fetchStats().then(() => setRefreshing(false));
     }, []);
+
+    const handleInvite = async () => {
+        try {
+            await Share.share({
+                message: `Hey! Join Forge India as an agent and start earning. Register here: https://forgeindia.com/register?ref=${user?.id?.substring(0, 8)}`,
+                title: 'Invite to Forge India'
+            });
+        } catch (error) {
+            Alert.alert('Error', 'Could not open share menu');
+        }
+    };
+
+    const handleSupport = () => {
+        Alert.alert(
+            'Contact Support',
+            'How would you like to reach us?',
+            [
+                { text: 'WhatsApp', onPress: () => Linking.openURL('whatsapp://send?phone=919876543210&text=Hi Support, I need help with Forge India App') },
+                { text: 'Email', onPress: () => Linking.openURL('mailto:support@forgeindia.com?subject=Agent Support Request') },
+                { text: 'Cancel', style: 'cancel' }
+            ]
+        );
+    };
 
     return (
         <ScrollView 
@@ -62,9 +94,9 @@ const AgentDashboard = ({ navigation }) => {
                             />
                         }
                     >
-                        <Menu.Item onPress={() => { setMenuVisible(false); Alert.alert('Add Money', 'Add money feature coming soon!'); }} title="Add Money" leadingIcon="plus-circle" />
-                        <Menu.Item onPress={() => { setMenuVisible(false); Alert.alert('Transfer', 'Transfer feature coming soon!'); }} title="Transfer" leadingIcon="bank-transfer" />
-                        <Menu.Item onPress={() => { setMenuVisible(false); Alert.alert('Statement', 'Your wallet statement will appear here.'); }} title="Statement" leadingIcon="file-document" />
+                        <Menu.Item onPress={() => { setMenuVisible(false); navigation.navigate('Wallet'); }} title="Add Money" leadingIcon="plus-circle" />
+                        <Menu.Item onPress={() => { setMenuVisible(false); navigation.navigate('Wallet'); }} title="Transfer" leadingIcon="bank-transfer" />
+                        <Menu.Item onPress={() => { setMenuVisible(false); navigation.navigate('Wallet'); }} title="Statement" leadingIcon="file-document" />
                     </Menu>
                 </View>
                 <Text style={styles.balance}>₹{stats.balance.toLocaleString('en-IN')}</Text>
@@ -73,7 +105,7 @@ const AgentDashboard = ({ navigation }) => {
                         mode="contained" 
                         buttonColor="rgba(255,255,255,0.2)" 
                         style={styles.walletBtn}
-                        onPress={() => Alert.alert('Withdraw', 'Minimum withdrawal is ₹100. Feature will be available once you have balance.')}
+                        onPress={() => navigation.navigate('Wallet')}
                     >
                         Withdraw
                     </Button>
@@ -81,7 +113,7 @@ const AgentDashboard = ({ navigation }) => {
                         mode="contained" 
                         buttonColor="rgba(255,255,255,0.2)" 
                         style={styles.walletBtn}
-                        onPress={() => Alert.alert('Transaction History', 'No transactions yet. Your earnings and withdrawals will appear here.')}
+                        onPress={() => navigation.navigate('Wallet')}
                     >
                         History
                     </Button>
@@ -113,10 +145,10 @@ const AgentDashboard = ({ navigation }) => {
                 />
                 <DashboardCard 
                     title="Total Commission" 
-                    value="₹1,240" 
+                    value={`₹${(Array.isArray(stats.earnings) ? stats.earnings.reduce((a, b) => a + b, 0) : (stats.earnings || 0)).toLocaleString('en-IN')}`} 
                     icon="trending-up" 
                     color="#E91E63" 
-                    subtitle="This Month"
+                    subtitle="All Time"
                 />
             </View>
 
@@ -132,38 +164,40 @@ const AgentDashboard = ({ navigation }) => {
                     <Text style={styles.actionLabel}>New Tie-up</Text>
                 </Surface>
                 <Surface style={styles.actionCard} elevation={1}>
-                    <IconButton icon="account-plus" iconColor="#0F4C81" size={32} onPress={() => {}} />
+                    <IconButton icon="account-plus" iconColor="#0F4C81" size={32} onPress={handleInvite} />
                     <Text style={styles.actionLabel}>Invite</Text>
                 </Surface>
                 <Surface style={styles.actionCard} elevation={1}>
-                    <IconButton icon="help-circle" iconColor="#0F4C81" size={32} onPress={() => {}} />
+                    <IconButton icon="help-circle" iconColor="#0F4C81" size={32} onPress={handleSupport} />
                     <Text style={styles.actionLabel}>Support</Text>
                 </Surface>
             </View>
             {/* Recent Tasks */}
             <View style={styles.sectionHeader}>
                 <Title style={styles.sectionTitle}>Recent Tasks</Title>
-                <Button mode="text" compact onPress={() => {}}>View All</Button>
+                <Button mode="text" compact onPress={() => navigation.navigate('Tasks')}>View All</Button>
             </View>
             <Surface style={styles.tasksContainer} elevation={1}>
-                {[
-                    { id: 1, title: 'Store KYC Verification', sub: 'Global Enterprises', time: '2 hours ago', status: 'Pending', color: '#F4B400', icon: 'clipboard-check' },
-                    { id: 2, title: 'Tie-up Agreement Signed', sub: 'Metro Mart', time: '5 hours ago', status: 'Completed', color: '#4CAF50', icon: 'handshake' },
-                    { id: 3, title: 'Follow-up Required', sub: 'Sunrise Bakery', time: '1 day ago', status: 'Critical', color: '#E91E63', icon: 'alert-circle' },
-                ].map((task, index) => (
-                    <View key={task.id} style={[styles.taskItem, index === 0 ? {} : styles.taskBorder]}>
-                        <View style={[styles.taskIcon, { backgroundColor: task.color + '15' }]}>
-                            <IconButton icon={task.icon} iconColor={task.color} size={20} />
+                {tasksLoading ? (
+                    <ActivityIndicator style={{ padding: 20 }} color="#0F4C81" />
+                ) : tasks.length === 0 ? (
+                    <Text style={{ textAlign: 'center', padding: 20, color: '#999' }}>No tasks assigned yet.</Text>
+                ) : (
+                    tasks.slice(0, 3).map((task, index) => (
+                        <View key={task._id || index} style={[styles.taskItem, index === 0 ? {} : styles.taskBorder]}>
+                            <View style={[styles.taskIcon, { backgroundColor: (task.color || '#0F4C81') + '15' }]}>
+                                <IconButton icon={task.icon || 'clipboard-check'} iconColor={task.color || '#0F4C81'} size={20} />
+                            </View>
+                            <View style={styles.taskInfo}>
+                                <Text style={styles.taskTitle}>{task.title}</Text>
+                                <Text style={styles.taskSub}>{task.sub || task.businessName} • {task.time || new Date(task.createdAt).toLocaleDateString()}</Text>
+                            </View>
+                            <Surface style={[styles.statusBadge, { backgroundColor: (task.color || '#F4B400') + '10' }]} elevation={0}>
+                                <Text style={[styles.statusText, { color: task.color || '#F4B400' }]}>{task.status}</Text>
+                            </Surface>
                         </View>
-                        <View style={styles.taskInfo}>
-                            <Text style={styles.taskTitle}>{task.title}</Text>
-                            <Text style={styles.taskSub}>{task.sub} • {task.time}</Text>
-                        </View>
-                        <Surface style={[styles.statusBadge, { backgroundColor: task.color + '10' }]} elevation={0}>
-                            <Text style={[styles.statusText, { color: task.color }]}>{task.status}</Text>
-                        </Surface>
-                    </View>
-                ))}
+                    ))
+                )}
             </Surface>
 
             <Button mode="text" onPress={logout} textColor="#666" style={styles.logoutBtn}>
